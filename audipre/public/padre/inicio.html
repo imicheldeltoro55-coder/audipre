@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis niños — AudiPre</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="contenedor" style="padding-top: 40px; padding-bottom: 64px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+    <h1 style="font-size: 26px; margin:0;">Mis niños</h1>
+    <button class="btn btn-primario" id="btn-nuevo">+ Añadir niño</button>
+  </div>
+
+  <div id="lista-ninos" class="lista-ninos"></div>
+  <p id="sin-ninos" class="oculto" style="color: var(--tinta-suave); text-align:center; padding: 40px 0;">
+    Aún no has añadido ningún niño. Pulsa "Añadir niño" para empezar su seguimiento.
+  </p>
+</div>
+
+<!-- Modal simple para crear niño -->
+<div id="modal-nuevo" class="oculto" style="position:fixed; inset:0; background:rgba(43,42,76,0.4); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;">
+  <form id="form-nino" class="tarjeta" style="max-width: 460px; width:100%;">
+    <h3 style="margin-top:0;">Nuevo niño</h3>
+
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" required>
+
+    <label for="edad">Edad (años)</label>
+    <input type="number" id="edad" min="0" max="18">
+
+    <label for="sexo">Sexo</label>
+    <select id="sexo">
+      <option value="">Selecciona</option>
+      <option value="F">Femenino</option>
+      <option value="M">Masculino</option>
+    </select>
+
+    <label for="grado">Grado de hipoacusia</label>
+    <select id="grado">
+      <option value="">Selecciona</option>
+      <option value="superficial">Superficial</option>
+      <option value="moderada">Moderada</option>
+      <option value="severa">Severa</option>
+      <option value="profunda">Profunda</option>
+    </select>
+
+    <label for="modo">Modo de comunicación</label>
+    <select id="modo">
+      <option value="">Selecciona</option>
+      <option value="pre-verbal">Lenguaje pre-verbal</option>
+      <option value="bimodal">Bimodal</option>
+      <option value="oral">Oral</option>
+      <option value="señas">Lengua de señas</option>
+    </select>
+
+    <label for="usa_protesis">¿Usa prótesis auditiva?</label>
+    <div class="opciones-si-no">
+      <label><input type="radio" name="usa_protesis" value="1"><span>Sí</span></label>
+      <label><input type="radio" name="usa_protesis" value="0" checked><span>No</span></label>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:24px;">
+      <button type="button" class="btn btn-secundario btn-bloque" id="btn-cancelar">Cancelar</button>
+      <button type="submit" class="btn btn-primario btn-bloque">Guardar</button>
+    </div>
+    <div id="msg-nino" class="oculto"></div>
+  </form>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+(async function () {
+  const user = await requireSession();
+  if (!user) return;
+  if (user.rol !== 'padre') { window.location.href = '/logopeda/panel.html'; return; }
+  renderTopbar(user, 'inicio.html');
+
+  const ETIQUETAS_GRADO = { superficial: 'Superficial', moderada: 'Moderada', severa: 'Severa', profunda: 'Profunda' };
+
+  async function cargarNinos() {
+    const { ninos } = await Api.get('/api/ninos');
+    const cont = document.getElementById('lista-ninos');
+    const vacio = document.getElementById('sin-ninos');
+    cont.innerHTML = '';
+    if (ninos.length === 0) {
+      vacio.classList.remove('oculto');
+      return;
+    }
+    vacio.classList.add('oculto');
+    for (const n of ninos) {
+      const a = document.createElement('a');
+      a.href = `/padre/nino.html?id=${n.id}`;
+      a.className = 'item-nino';
+      a.innerHTML = `
+        <div>
+          <h3>${n.nombre}</h3>
+          <span>${n.edad ? n.edad + ' años · ' : ''}${n.grado_hipoacusia ? ETIQUETAS_GRADO[n.grado_hipoacusia] : 'Sin datos de grado'}</span>
+        </div>
+        <span style="color: var(--acento-oscuro); font-weight:600;">Ver guía →</span>
+      `;
+      cont.appendChild(a);
+    }
+  }
+
+  document.getElementById('btn-nuevo').addEventListener('click', () => {
+    document.getElementById('modal-nuevo').classList.remove('oculto');
+  });
+  document.getElementById('btn-cancelar').addEventListener('click', () => {
+    document.getElementById('modal-nuevo').classList.add('oculto');
+  });
+
+  document.getElementById('form-nino').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('msg-nino');
+    msg.classList.add('oculto');
+    try {
+      await Api.post('/api/ninos', {
+        nombre: document.getElementById('nombre').value.trim(),
+        edad: document.getElementById('edad').value ? Number(document.getElementById('edad').value) : null,
+        sexo: document.getElementById('sexo').value || null,
+        grado_hipoacusia: document.getElementById('grado').value || null,
+        modo_comunicacion: document.getElementById('modo').value || null,
+        usa_protesis: document.querySelector('input[name="usa_protesis"]:checked').value === '1',
+      });
+      document.getElementById('modal-nuevo').classList.add('oculto');
+      document.getElementById('form-nino').reset();
+      await cargarNinos();
+    } catch (err) {
+      mostrarError(msg, err.message);
+    }
+  });
+
+  await cargarNinos();
+})();
+</script>
+
+</body>
+</html>

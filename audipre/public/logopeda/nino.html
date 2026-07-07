@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detalle de niño — AudiPre</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="contenedor" style="padding-top: 40px; padding-bottom: 64px;">
+  <a href="/logopeda/panel.html" class="btn btn-texto" style="padding-left:0;">← Panel</a>
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1 id="titulo-nino" style="font-size: 26px; margin: 6px 0 24px;"></h1>
+    <button class="btn btn-secundario oculto" id="btn-asignar">Asignarme este niño</button>
+  </div>
+
+  <div class="grid-3" style="margin-bottom: 32px;">
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-racha">0</div>
+      <div class="stat-etiqueta">Días seguidos</div>
+    </div>
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-pct">0%</div>
+      <div class="stat-etiqueta">Cumplimiento general</div>
+    </div>
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-total">0</div>
+      <div class="stat-etiqueta">Sesiones registradas</div>
+    </div>
+  </div>
+
+  <div class="tarjeta" style="margin-bottom: 32px;">
+    <h3 style="margin-top:0;">Cuestionario de conocimiento familiar</h3>
+    <div id="cuestionario-detalle" style="font-size: 14px;"></div>
+  </div>
+
+  <h2 style="font-size: 20px;">Historial de sesiones</h2>
+  <div id="lista-sesiones"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+(async function () {
+  const user = await requireSession();
+  if (!user) return;
+  if (user.rol !== 'logopeda') { window.location.href = '/padre/inicio.html'; return; }
+  renderTopbar(user, 'panel.html');
+
+  const params = new URLSearchParams(window.location.search);
+  const ninoId = params.get('id');
+  if (!ninoId) { window.location.href = '/logopeda/panel.html'; return; }
+
+  const { nino } = await Api.get(`/api/ninos/${ninoId}`);
+  document.getElementById('titulo-nino').textContent = nino.nombre;
+
+  if (!nino.logopeda_id) {
+    const btn = document.getElementById('btn-asignar');
+    btn.classList.remove('oculto');
+    btn.addEventListener('click', async () => {
+      await Api.put(`/api/ninos/${ninoId}/asignar`);
+      window.location.reload();
+    });
+  }
+
+  const p = await Api.get(`/api/ninos/${ninoId}/progreso`);
+  document.getElementById('stat-racha').textContent = p.racha_dias;
+  document.getElementById('stat-pct').textContent = p.porcentaje_cumplimiento + '%';
+  document.getElementById('stat-total').textContent = p.total_sesiones;
+
+  const { cuestionarios } = await Api.get(`/api/ninos/${ninoId}/cuestionario`);
+  const contC = document.getElementById('cuestionario-detalle');
+  if (cuestionarios.length === 0) {
+    contC.innerHTML = '<p style="color: var(--tinta-suave);">La familia aún no ha completado el cuestionario.</p>';
+  } else {
+    const c = cuestionarios[0];
+    const siNo = (v) => v ? 'Sí' : 'No';
+    contC.innerHTML = `
+      <div class="grid-2" style="gap:10px;">
+        <div>Escolaridad: <strong>${c.grado_escolaridad || '—'}</strong></div>
+        <div>Conocía el IC antes: <strong>${siNo(c.conocia_implante_antes)}</strong></div>
+        <div>Conocía rol de la familia: <strong>${siNo(c.conocia_rol_familia)}</strong></div>
+        <div>Sabe rehabilitar antes: <strong>${siNo(c.conoce_rehabilitar_antes)}</strong></div>
+        <div>Sabe cuidar después: <strong>${siNo(c.conoce_cuidar_despues)}</strong></div>
+        <div>Cree en integración total: <strong>${siNo(c.cree_integracion_total)}</strong></div>
+      </div>
+    `;
+  }
+
+  const { sesiones } = await Api.get(`/api/ninos/${ninoId}/sesiones`);
+  const contS = document.getElementById('lista-sesiones');
+  if (sesiones.length === 0) {
+    contS.innerHTML = '<p style="color: var(--tinta-suave);">Sin sesiones registradas aún.</p>';
+  } else {
+    contS.innerHTML = sesiones.map(s => `
+      <div class="tarjeta" style="margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>${new Date(s.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+          ${s.duracion_min ? ` · ${s.duracion_min} min` : ''}
+          ${s.notas ? `<p style="margin:6px 0 0; color: var(--tinta-suave); font-size:13.5px;">${s.notas}</p>` : ''}
+        </div>
+        <span class="badge badge-${s.cumplimiento}">${s.cumplimiento.replace('_', ' ')}</span>
+      </div>
+    `).join('');
+  }
+})();
+</script>
+
+</body>
+</html>

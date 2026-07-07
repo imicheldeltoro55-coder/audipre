@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de entrenamiento — AudiPre</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="contenedor" style="padding-top: 40px; padding-bottom: 64px;">
+  <a href="/padre/inicio.html" class="btn btn-texto" style="padding-left:0;">← Mis niños</a>
+  <h1 id="titulo-nino" style="font-size: 26px; margin: 6px 0 24px;"></h1>
+
+  <!-- Progreso -->
+  <div class="grid-3" style="margin-bottom: 32px;">
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-racha">0</div>
+      <div class="stat-etiqueta">Días seguidos rehabilitando</div>
+    </div>
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-pct">0%</div>
+      <div class="stat-etiqueta">Cumplimiento general</div>
+    </div>
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-total">0</div>
+      <div class="stat-etiqueta">Sesiones registradas</div>
+    </div>
+  </div>
+
+  <!-- Cuestionario inicial -->
+  <div class="tarjeta" id="bloque-cuestionario" style="margin-bottom: 32px;">
+    <h3 style="margin-top:0;">Cuestionario inicial de conocimiento</h3>
+    <p style="color: var(--tinta-suave); font-size: 14px;">
+      Ayúdanos a entender cuánto sabes hoy sobre el implante coclear y la
+      rehabilitación en casa. Solo toma un minuto.
+    </p>
+    <button class="btn btn-secundario" id="btn-abrir-cuestionario">Completar cuestionario</button>
+    <div id="resumen-cuestionario" class="oculto" style="margin-top: 16px; font-size: 14px; color: var(--tinta-suave);"></div>
+  </div>
+
+  <!-- Registrar sesión de hoy -->
+  <div class="tarjeta" style="margin-bottom: 40px;">
+    <h3 style="margin-top:0;">Registrar sesión de hoy</h3>
+    <form id="form-sesion">
+      <label for="fecha">Fecha</label>
+      <input type="date" id="fecha" required>
+
+      <label for="duracion">Duración (minutos)</label>
+      <input type="number" id="duracion" min="0">
+
+      <label>¿En qué medida cumpliste hoy las actividades?</label>
+      <select id="cumplimiento" required>
+        <option value="total">Total</option>
+        <option value="parcial">Parcial</option>
+        <option value="pocas_veces">Pocas veces</option>
+        <option value="nunca">Nunca</option>
+      </select>
+
+      <label for="notas">Notas (opcional)</label>
+      <textarea id="notas" placeholder="¿Cómo reaccionó el niño? ¿Algo que quieras contarle al logopeda?"></textarea>
+
+      <button type="submit" class="btn btn-primario" style="margin-top:20px;">Guardar sesión</button>
+      <div id="msg-sesion" class="oculto"></div>
+    </form>
+  </div>
+
+  <!-- Guía de ejercicios -->
+  <h2 style="font-size: 22px;">Guía de instrucción para entrenamiento auditivo</h2>
+  <p style="color: var(--tinta-suave); margin-top:-8px;">
+    Marca los ejercicios que trabajaste hoy antes de guardar tu sesión.
+  </p>
+  <div id="categorias-ejercicios"></div>
+</div>
+
+<!-- Modal cuestionario -->
+<div id="modal-cuestionario" class="oculto" style="position:fixed; inset:0; background:rgba(43,42,76,0.4); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; overflow-y:auto;">
+  <form id="form-cuestionario" class="tarjeta" style="max-width: 520px; width:100%; max-height: 88vh; overflow-y:auto;">
+    <h3 style="margin-top:0;">Cuestionario de conocimiento</h3>
+
+    <label for="escolaridad">Grado de escolaridad</label>
+    <select id="escolaridad">
+      <option value="primaria">Primaria</option>
+      <option value="secundaria">Secundaria</option>
+      <option value="media">Media</option>
+      <option value="superior">Superior</option>
+    </select>
+
+    <label>¿Conocías sobre el implante coclear antes de esta opción de tratamiento?</label>
+    <div class="opciones-si-no">
+      <label><input type="radio" name="conocia_implante_antes" value="1"><span>Sí</span></label>
+      <label><input type="radio" name="conocia_implante_antes" value="0" checked><span>No</span></label>
+    </div>
+
+    <label>¿Conocías la importancia del papel de la familia en la rehabilitación?</label>
+    <div class="opciones-si-no">
+      <label><input type="radio" name="conocia_rol_familia" value="1"><span>Sí</span></label>
+      <label><input type="radio" name="conocia_rol_familia" value="0" checked><span>No</span></label>
+    </div>
+
+    <label>¿Sabes cómo rehabilitar al niño antes de ser implantado?</label>
+    <div class="opciones-si-no">
+      <label><input type="radio" name="conoce_rehabilitar_antes" value="1"><span>Sí</span></label>
+      <label><input type="radio" name="conoce_rehabilitar_antes" value="0" checked><span>No</span></label>
+    </div>
+
+    <label>¿Sabes cómo cuidar al niño después de ser implantado?</label>
+    <div class="opciones-si-no">
+      <label><input type="radio" name="conoce_cuidar_despues" value="1"><span>Sí</span></label>
+      <label><input type="radio" name="conoce_cuidar_despues" value="0" checked><span>No</span></label>
+    </div>
+
+    <label>¿Crees que el niño puede integrarse totalmente a la sociedad?</label>
+    <div class="opciones-si-no">
+      <label><input type="radio" name="cree_integracion_total" value="1"><span>Sí</span></label>
+      <label><input type="radio" name="cree_integracion_total" value="0" checked><span>No</span></label>
+    </div>
+
+    <label>¿El niño ha recibido rehabilitación en algún momento?</label>
+    <div class="opciones-si-no">
+      <label><input type="radio" name="rehabilitacion_recibida" value="1"><span>Sí</span></label>
+      <label><input type="radio" name="rehabilitacion_recibida" value="0" checked><span>No</span></label>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:24px;">
+      <button type="button" class="btn btn-secundario btn-bloque" id="btn-cancelar-cuestionario">Cancelar</button>
+      <button type="submit" class="btn btn-primario btn-bloque">Enviar</button>
+    </div>
+    <div id="msg-cuestionario" class="oculto"></div>
+  </form>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+(async function () {
+  const user = await requireSession();
+  if (!user) return;
+  if (user.rol !== 'padre') { window.location.href = '/logopeda/panel.html'; return; }
+  renderTopbar(user, 'inicio.html');
+
+  const params = new URLSearchParams(window.location.search);
+  const ninoId = params.get('id');
+  if (!ninoId) { window.location.href = '/padre/inicio.html'; return; }
+
+  document.getElementById('fecha').valueAsDate = new Date();
+
+  const { nino } = await Api.get(`/api/ninos/${ninoId}`);
+  document.getElementById('titulo-nino').textContent = `Guía de ${nino.nombre}`;
+
+  async function cargarProgreso() {
+    const p = await Api.get(`/api/ninos/${ninoId}/progreso`);
+    document.getElementById('stat-racha').textContent = p.racha_dias;
+    document.getElementById('stat-pct').textContent = p.porcentaje_cumplimiento + '%';
+    document.getElementById('stat-total').textContent = p.total_sesiones;
+  }
+
+  async function cargarCuestionario() {
+    const { cuestionarios } = await Api.get(`/api/ninos/${ninoId}/cuestionario`);
+    const resumen = document.getElementById('resumen-cuestionario');
+    const boton = document.getElementById('btn-abrir-cuestionario');
+    if (cuestionarios.length > 0) {
+      resumen.classList.remove('oculto');
+      resumen.textContent = `Último cuestionario completado el ${new Date(cuestionarios[0].creado_en).toLocaleDateString('es-ES')}.`;
+      boton.textContent = 'Volver a completar';
+    }
+  }
+
+  async function cargarEjercicios() {
+    const { categorias } = await Api.get('/api/ejercicios');
+    const cont = document.getElementById('categorias-ejercicios');
+    cont.innerHTML = '';
+    let i = 1;
+    for (const [clave, items] of Object.entries(categorias)) {
+      const bloque = document.createElement('div');
+      bloque.className = 'categoria-bloque';
+      bloque.innerHTML = `
+        <div class="categoria-titulo">
+          <div class="etiqueta-numero">${i}</div>
+          <h3 style="margin:0; font-size:17px;">${ETIQUETAS_CATEGORIA[clave] || clave}</h3>
+        </div>
+        <div class="tarjeta">
+          ${items.map(e => {
+            const imgSrc = e.imagen_archivo || e.imagen_url;
+            const vidSrc = e.video_archivo || e.video_url;
+            return `
+            <div class="ejercicio-item">
+              <input type="checkbox" class="ejercicio-check" value="${e.id}">
+              <div style="flex:1;">
+                <h4>${e.titulo}</h4>
+                <p>${e.descripcion || ''}</p>
+                ${imgSrc ? `<img src="${imgSrc}" alt="${e.titulo}" style="max-width:100%; border-radius:8px; margin-top:8px;">` : ''}
+                ${vidSrc ? (e.video_archivo
+                    ? `<video src="${vidSrc}" controls style="max-width:100%; border-radius:8px; margin-top:8px;"></video>`
+                    : `<a href="${vidSrc}" target="_blank" rel="noopener" style="display:inline-block; margin-top:8px; font-size:13px;">Ver video →</a>`) : ''}
+              </div>
+            </div>
+          `;
+          }).join('')}
+        </div>
+      `;
+      cont.appendChild(bloque);
+      i++;
+    }
+  }
+
+  document.getElementById('form-sesion').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('msg-sesion');
+    msg.classList.add('oculto');
+    const ejerciciosIds = Array.from(document.querySelectorAll('.ejercicio-check:checked')).map(c => Number(c.value));
+    try {
+      await Api.post(`/api/ninos/${ninoId}/sesiones`, {
+        fecha: document.getElementById('fecha').value,
+        duracion_min: document.getElementById('duracion').value ? Number(document.getElementById('duracion').value) : null,
+        cumplimiento: document.getElementById('cumplimiento').value,
+        notas: document.getElementById('notas').value.trim() || null,
+        ejercicios_ids: ejerciciosIds,
+      });
+      mostrarExito(msg, 'Sesión guardada. ¡Buen trabajo hoy!');
+      document.getElementById('notas').value = '';
+      document.querySelectorAll('.ejercicio-check').forEach(c => c.checked = false);
+      await cargarProgreso();
+    } catch (err) {
+      mostrarError(msg, err.message);
+    }
+  });
+
+  document.getElementById('btn-abrir-cuestionario').addEventListener('click', () => {
+    document.getElementById('modal-cuestionario').classList.remove('oculto');
+  });
+  document.getElementById('btn-cancelar-cuestionario').addEventListener('click', () => {
+    document.getElementById('modal-cuestionario').classList.add('oculto');
+  });
+
+  document.getElementById('form-cuestionario').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('msg-cuestionario');
+    msg.classList.add('oculto');
+    const radio = (name) => document.querySelector(`input[name="${name}"]:checked`).value === '1';
+    try {
+      await Api.post(`/api/ninos/${ninoId}/cuestionario`, {
+        grado_escolaridad: document.getElementById('escolaridad').value,
+        conocia_implante_antes: radio('conocia_implante_antes'),
+        conocia_rol_familia: radio('conocia_rol_familia'),
+        conoce_rehabilitar_antes: radio('conoce_rehabilitar_antes'),
+        conoce_cuidar_despues: radio('conoce_cuidar_despues'),
+        cree_integracion_total: radio('cree_integracion_total'),
+        rehabilitacion_recibida: radio('rehabilitacion_recibida'),
+      });
+      document.getElementById('modal-cuestionario').classList.add('oculto');
+      await cargarCuestionario();
+    } catch (err) {
+      mostrarError(msg, err.message);
+    }
+  });
+
+  await Promise.all([cargarProgreso(), cargarCuestionario(), cargarEjercicios()]);
+})();
+</script>
+
+</body>
+</html>

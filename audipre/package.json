@@ -1,0 +1,15 @@
+{
+  "name": "audipre",
+  "version": "1.0.0",
+  "description": "Plataforma de seguimiento del entrenamiento auditivo pre-implante coclear, basada en la propuesta de actividades de la tesis de la Dra. Daylie Michel Legra (Complejo Borras-Marfan, 2020).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": ["logopedia", "implante-coclear", "entrenamiento-auditivo"],
+  "author": "",
+  "license": "ISC"
+}

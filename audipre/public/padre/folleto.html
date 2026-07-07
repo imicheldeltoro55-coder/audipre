@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Folleto informativo — AudiPre</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="contenedor" style="max-width: 760px; padding-top: 40px; padding-bottom: 64px;">
+  <h1 style="font-size: 26px;">Orientaciones sobre la importancia de la comunicación</h1>
+  <p style="color: var(--tinta-suave); margin-top:-8px;">
+    Información pensada para padres o tutor de niños con hipoacusia severa a
+    profunda, candidatos a implante coclear.
+  </p>
+
+  <div id="lista-temas" style="margin-top: 24px;"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+(async function () {
+  const user = await requireSession();
+  if (!user) return;
+  if (user.rol !== 'padre') { window.location.href = '/logopeda/panel.html'; return; }
+  renderTopbar(user, 'folleto.html');
+
+  const { temas } = await Api.get('/api/folleto');
+  const cont = document.getElementById('lista-temas');
+  cont.innerHTML = temas.map(t => {
+    const imgSrc = t.imagen_archivo || t.imagen_url;
+    const vidSrc = t.video_archivo || t.video_url;
+    return `
+    <div class="tarjeta" style="margin-bottom: 16px; display:flex; gap:16px;">
+      <div class="etiqueta-numero" style="flex-shrink:0;">${t.orden}</div>
+      <div style="flex:1;">
+        <h3 style="margin: 0 0 6px; font-size: 17px;">${t.titulo}</h3>
+        <p style="margin:0; color: var(--tinta-suave); font-size:14.5px;">${t.contenido}</p>
+        ${imgSrc ? `<img src="${imgSrc}" alt="${t.titulo}" style="max-width:100%; border-radius:8px; margin-top:10px;">` : ''}
+        ${vidSrc ? (t.video_archivo
+            ? `<video src="${vidSrc}" controls style="max-width:100%; border-radius:8px; margin-top:10px;"></video>`
+            : `<a href="${vidSrc}" target="_blank" rel="noopener" style="display:inline-block; margin-top:10px; font-size:13px;">Ver video →</a>`) : ''}
+      </div>
+    </div>
+  `;
+  }).join('');
+})();
+</script>
+
+</body>
+</html>

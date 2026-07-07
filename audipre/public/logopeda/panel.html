@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel — AudiPre</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="contenedor" style="padding-top: 40px; padding-bottom: 64px;">
+  <h1 style="font-size: 26px;">Panel del logopeda</h1>
+
+  <div class="grid-3" style="margin: 24px 0 40px;">
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-total-ninos">0</div>
+      <div class="stat-etiqueta">Niños a mi cargo</div>
+    </div>
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-cumplimiento">0%</div>
+      <div class="stat-etiqueta">Cumplimiento promedio familiar</div>
+    </div>
+    <div class="tarjeta">
+      <div class="stat-grande" id="stat-alertas">0</div>
+      <div class="stat-etiqueta">Alertas activas</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom: 40px;">
+    <div class="tarjeta">
+      <h3 style="margin-top:0;">Por grado de hipoacusia</h3>
+      <div id="dist-grado" style="font-size:14px; color: var(--tinta-suave);"></div>
+    </div>
+    <div class="tarjeta">
+      <h3 style="margin-top:0;">Por modo de comunicación</h3>
+      <div id="dist-modo" style="font-size:14px; color: var(--tinta-suave);"></div>
+    </div>
+  </div>
+
+  <h2 style="font-size: 20px;">Niños</h2>
+  <div id="lista-ninos" class="lista-ninos"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+(async function () {
+  const user = await requireSession();
+  if (!user) return;
+  if (user.rol !== 'logopeda') { window.location.href = '/padre/inicio.html'; return; }
+  renderTopbar(user, 'panel.html');
+
+  const ETIQUETAS_GRADO = { superficial: 'Superficial', moderada: 'Moderada', severa: 'Severa', profunda: 'Profunda' };
+  const ETIQUETAS_MODO = { 'pre-verbal': 'Lenguaje pre-verbal', bimodal: 'Bimodal', oral: 'Oral', 'señas': 'Lengua de señas' };
+
+  function renderDistribucion(elId, obj, etiquetas) {
+    const el = document.getElementById(elId);
+    const entradas = Object.entries(obj);
+    if (entradas.length === 0) { el.textContent = 'Sin datos aún.'; return; }
+    el.innerHTML = entradas.map(([k, v]) => `<div style="display:flex; justify-content:space-between; padding:4px 0;"><span>${etiquetas[k] || k}</span><strong>${v}</strong></div>`).join('');
+  }
+
+  const [stats, { alertas }, { ninos }] = await Promise.all([
+    Api.get('/api/stats/resumen'),
+    Api.get('/api/alertas'),
+    Api.get('/api/ninos'),
+  ]);
+
+  document.getElementById('stat-total-ninos').textContent = stats.total_ninos;
+  document.getElementById('stat-cumplimiento').textContent = stats.cumplimiento_promedio + '%';
+  document.getElementById('stat-alertas').textContent = alertas.length;
+  renderDistribucion('dist-grado', stats.por_grado_hipoacusia, ETIQUETAS_GRADO);
+  renderDistribucion('dist-modo', stats.por_modo_comunicacion, ETIQUETAS_MODO);
+
+  const cont = document.getElementById('lista-ninos');
+  if (ninos.length === 0) {
+    cont.innerHTML = '<p style="color: var(--tinta-suave);">Aún no tienes niños asignados.</p>';
+  } else {
+    cont.innerHTML = ninos.map(n => `
+      <a href="/logopeda/nino.html?id=${n.id}" class="item-nino">
+        <div>
+          <h3>${n.nombre}</h3>
+          <span>${n.edad ? n.edad + ' años · ' : ''}${n.grado_hipoacusia ? ETIQUETAS_GRADO[n.grado_hipoacusia] : 'Sin datos'} ${n.logopeda_id ? '' : '· Sin asignar'}</span>
+        </div>
+        <span style="color: var(--acento-oscuro); font-weight:600;">Ver detalle →</span>
+      </a>
+    `).join('');
+  }
+})();
+</script>
+
+</body>
+</html>

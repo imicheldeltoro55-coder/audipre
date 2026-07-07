@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionar contenido — AudiPre</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tabs { display:flex; gap:8px; margin-bottom: 24px; }
+  .tab-btn {
+    padding: 10px 20px; border-radius: 999px; border: 1.5px solid var(--borde);
+    background: var(--crema-carta); cursor:pointer; font-weight:600; font-size:14px; color: var(--tinta-suave);
+  }
+  .tab-btn.activo { background: var(--tinta); color: white; border-color: var(--tinta); }
+  .item-contenido {
+    display:flex; justify-content:space-between; align-items:flex-start; gap:16px;
+    padding: 18px 20px; background: var(--crema-carta); border:1px solid var(--borde);
+    border-radius: 12px; margin-bottom: 12px;
+  }
+  .item-contenido.inactivo { opacity: 0.5; }
+  .item-contenido h4 { margin:0 0 4px; font-size:15.5px; }
+  .item-contenido p { margin:0; font-size:13.5px; color: var(--tinta-suave); }
+  .acciones-item { display:flex; gap:8px; flex-shrink:0; }
+  .acciones-item .btn { padding: 8px 14px; font-size:13px; }
+  .categoria-admin { margin-bottom: 28px; }
+  .categoria-admin h3 { font-size:16px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="contenedor" style="padding-top: 40px; padding-bottom: 64px;">
+  <h1 style="font-size: 26px;">Gestionar contenido</h1>
+  <p style="color: var(--tinta-suave); margin-top:-8px;">
+    Los cambios que hagas aquí se reflejan de inmediato en la guía y el
+    folleto que ven los padres. Ellos solo pueden consultarlo.
+  </p>
+
+  <div class="tabs">
+    <button class="tab-btn activo" data-tab="ejercicios">Ejercicios de la guía</button>
+    <button class="tab-btn" data-tab="folleto">Folleto informativo</button>
+  </div>
+
+  <!-- EJERCICIOS -->
+  <div id="panel-ejercicios">
+    <button class="btn btn-primario" id="btn-nuevo-ejercicio" style="margin-bottom:20px;">+ Nuevo ejercicio</button>
+    <div id="lista-ejercicios-admin"></div>
+  </div>
+
+  <!-- FOLLETO -->
+  <div id="panel-folleto" class="oculto">
+    <button class="btn btn-primario" id="btn-nuevo-tema" style="margin-bottom:20px;">+ Nuevo tema</button>
+    <div id="lista-folleto-admin"></div>
+  </div>
+</div>
+
+<!-- Modal ejercicio -->
+<div id="modal-ejercicio" class="oculto" style="position:fixed; inset:0; background:rgba(43,42,76,0.4); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; overflow-y:auto;">
+  <form id="form-ejercicio" class="tarjeta" style="max-width: 520px; width:100%; max-height: 88vh; overflow-y:auto;">
+    <h3 style="margin-top:0;" id="titulo-modal-ejercicio">Nuevo ejercicio</h3>
+    <input type="hidden" id="ej-id">
+
+    <label for="ej-categoria">Categoría</label>
+    <select id="ej-categoria" required>
+      <option value="percepcion_sonidos">Percepción de sonidos</option>
+      <option value="percepcion_gestual">Percepción gestual</option>
+      <option value="atencion">Ejercicios para la atención</option>
+      <option value="memoria">Memoria visual y auditiva</option>
+      <option value="praxis_bucofacial">Praxis buco-facial</option>
+      <option value="lenguaje">Estimulación del lenguaje</option>
+    </select>
+
+    <label for="ej-titulo">Título</label>
+    <input type="text" id="ej-titulo" required>
+
+    <label for="ej-descripcion">Descripción</label>
+    <textarea id="ej-descripcion"></textarea>
+
+    <label for="ej-orden">Orden dentro de su categoría</label>
+    <input type="number" id="ej-orden" min="0">
+
+    <label for="ej-imagen-url">Link de imagen (opcional)</label>
+    <input type="url" id="ej-imagen-url" placeholder="https://...">
+    <label for="ej-imagen-archivo">O sube una imagen</label>
+    <input type="file" id="ej-imagen-archivo" accept="image/*">
+
+    <label for="ej-video-url">Link de video (YouTube, Drive, etc.)</label>
+    <input type="url" id="ej-video-url" placeholder="https://...">
+    <label for="ej-video-archivo">O sube un video</label>
+    <input type="file" id="ej-video-archivo" accept="video/*">
+
+    <div style="display:flex; gap:10px; margin-top:24px;">
+      <button type="button" class="btn btn-secundario btn-bloque" id="btn-cancelar-ejercicio">Cancelar</button>
+      <button type="submit" class="btn btn-primario btn-bloque">Guardar</button>
+    </div>
+    <div id="msg-ejercicio" class="oculto"></div>
+  </form>
+</div>
+
+<!-- Modal folleto -->
+<div id="modal-tema" class="oculto" style="position:fixed; inset:0; background:rgba(43,42,76,0.4); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; overflow-y:auto;">
+  <form id="form-tema" class="tarjeta" style="max-width: 520px; width:100%; max-height: 88vh; overflow-y:auto;">
+    <h3 style="margin-top:0;" id="titulo-modal-tema">Nuevo tema del folleto</h3>
+    <input type="hidden" id="tema-id">
+
+    <label for="tema-titulo">Título</label>
+    <input type="text" id="tema-titulo" required>
+
+    <label for="tema-contenido">Contenido</label>
+    <textarea id="tema-contenido" required style="min-height: 120px;"></textarea>
+
+    <label for="tema-orden">Orden</label>
+    <input type="number" id="tema-orden" min="1">
+
+    <label for="tema-imagen-url">Link de imagen (opcional)</label>
+    <input type="url" id="tema-imagen-url" placeholder="https://...">
+    <label for="tema-imagen-archivo">O sube una imagen</label>
+    <input type="file" id="tema-imagen-archivo" accept="image/*">
+
+    <label for="tema-video-url">Link de video (opcional)</label>
+    <input type="url" id="tema-video-url" placeholder="https://...">
+    <label for="tema-video-archivo">O sube un video</label>
+    <input type="file" id="tema-video-archivo" accept="video/*">
+
+    <div style="display:flex; gap:10px; margin-top:24px;">
+      <button type="button" class="btn btn-secundario btn-bloque" id="btn-cancelar-tema">Cancelar</button>
+      <button type="submit" class="btn btn-primario btn-bloque">Guardar</button>
+    </div>
+    <div id="msg-tema" class="oculto"></div>
+  </form>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+(async function () {
+  const user = await requireSession();
+  if (!user) return;
+  if (user.rol !== 'logopeda') { window.location.href = '/padre/inicio.html'; return; }
+  renderTopbar(user, 'contenido.html');
+
+  // --- Tabs ---
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('activo'));
+      btn.classList.add('activo');
+      document.getElementById('panel-ejercicios').classList.toggle('oculto', btn.dataset.tab !== 'ejercicios');
+      document.getElementById('panel-folleto').classList.toggle('oculto', btn.dataset.tab !== 'folleto');
+    });
+  });
+
+  // ===================== EJERCICIOS =====================
+  async function cargarEjerciciosAdmin() {
+    const { ejercicios } = await Api.get('/api/admin/ejercicios');
+    const cont = document.getElementById('lista-ejercicios-admin');
+    cont.innerHTML = '';
+    const porCategoria = {};
+    for (const e of ejercicios) {
+      if (!porCategoria[e.categoria]) porCategoria[e.categoria] = [];
+      porCategoria[e.categoria].push(e);
+    }
+    for (const [cat, items] of Object.entries(porCategoria)) {
+      const bloque = document.createElement('div');
+      bloque.className = 'categoria-admin';
+      bloque.innerHTML = `<h3>${ETIQUETAS_CATEGORIA[cat] || cat}</h3>`;
+      for (const e of items) {
+        const item = document.createElement('div');
+        item.className = 'item-contenido' + (e.activo ? '' : ' inactivo');
+        item.innerHTML = `
+          <div>
+            <h4>${e.titulo} ${e.activo ? '' : '<span class="badge badge-nunca">Inactivo</span>'}</h4>
+            <p>${e.descripcion || ''}</p>
+          </div>
+          <div class="acciones-item">
+            <button class="btn btn-secundario btn-editar">Editar</button>
+            <button class="btn ${e.activo ? 'btn-peligro' : 'btn-secundario'} btn-toggle">${e.activo ? 'Desactivar' : 'Activar'}</button>
+          </div>
+        `;
+        item.querySelector('.btn-editar').addEventListener('click', () => abrirModalEjercicio(e));
+        item.querySelector('.btn-toggle').addEventListener('click', async () => {
+          await Api.put(`/api/admin/ejercicios/${e.id}/estado`, { activo: !e.activo });
+          await cargarEjerciciosAdmin();
+        });
+        bloque.appendChild(item);
+      }
+      cont.appendChild(bloque);
+    }
+  }
+
+  function abrirModalEjercicio(e) {
+    document.getElementById('titulo-modal-ejercicio').textContent = e ? 'Editar ejercicio' : 'Nuevo ejercicio';
+    document.getElementById('ej-id').value = e ? e.id : '';
+    document.getElementById('ej-categoria').value = e ? e.categoria : 'percepcion_sonidos';
+    document.getElementById('ej-titulo').value = e ? e.titulo : '';
+    document.getElementById('ej-descripcion').value = e ? (e.descripcion || '') : '';
+    document.getElementById('ej-orden').value = e ? e.orden : 0;
+    document.getElementById('ej-imagen-url').value = e ? (e.imagen_url || '') : '';
+    document.getElementById('ej-video-url').value = e ? (e.video_url || '') : '';
+    document.getElementById('ej-imagen-archivo').value = '';
+    document.getElementById('ej-video-archivo').value = '';
+    document.getElementById('msg-ejercicio').classList.add('oculto');
+    document.getElementById('modal-ejercicio').classList.remove('oculto');
+  }
+
+  document.getElementById('btn-nuevo-ejercicio').addEventListener('click', () => abrirModalEjercicio(null));
+  document.getElementById('btn-cancelar-ejercicio').addEventListener('click', () => {
+    document.getElementById('modal-ejercicio').classList.add('oculto');
+  });
+
+  document.getElementById('form-ejercicio').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('msg-ejercicio');
+    msg.classList.add('oculto');
+    const id = document.getElementById('ej-id').value;
+
+    const fd = new FormData();
+    fd.append('categoria', document.getElementById('ej-categoria').value);
+    fd.append('titulo', document.getElementById('ej-titulo').value.trim());
+    fd.append('descripcion', document.getElementById('ej-descripcion').value.trim());
+    fd.append('orden', document.getElementById('ej-orden').value || 0);
+    fd.append('imagen_url', document.getElementById('ej-imagen-url').value.trim());
+    fd.append('video_url', document.getElementById('ej-video-url').value.trim());
+    const imgFile = document.getElementById('ej-imagen-archivo').files[0];
+    const vidFile = document.getElementById('ej-video-archivo').files[0];
+    if (imgFile) fd.append('imagen_archivo', imgFile);
+    if (vidFile) fd.append('video_archivo', vidFile);
+
+    try {
+      if (id) {
+        await Api.postForm(`/api/admin/ejercicios/${id}`, fd, 'PUT');
+      } else {
+        await Api.postForm('/api/admin/ejercicios', fd, 'POST');
+      }
+      document.getElementById('modal-ejercicio').classList.add('oculto');
+      await cargarEjerciciosAdmin();
+    } catch (err) {
+      mostrarError(msg, err.message);
+    }
+  });
+
+  // ===================== FOLLETO =====================
+  async function cargarFolletoAdmin() {
+    const { temas } = await Api.get('/api/admin/folleto');
+    const cont = document.getElementById('lista-folleto-admin');
+    cont.innerHTML = '';
+    for (const t of temas) {
+      const item = document.createElement('div');
+      item.className = 'item-contenido' + (t.activo ? '' : ' inactivo');
+      item.innerHTML = `
+        <div>
+          <h4>${t.orden}. ${t.titulo} ${t.activo ? '' : '<span class="badge badge-nunca">Inactivo</span>'}</h4>
+          <p>${t.contenido}</p>
+        </div>
+        <div class="acciones-item">
+          <button class="btn btn-secundario btn-editar">Editar</button>
+          <button class="btn ${t.activo ? 'btn-peligro' : 'btn-secundario'} btn-toggle">${t.activo ? 'Desactivar' : 'Activar'}</button>
+        </div>
+      `;
+      item.querySelector('.btn-editar').addEventListener('click', () => abrirModalTema(t));
+      item.querySelector('.btn-toggle').addEventListener('click', async () => {
+        await Api.put(`/api/admin/folleto/${t.id}/estado`, { activo: !t.activo });
+        await cargarFolletoAdmin();
+      });
+      cont.appendChild(item);
+    }
+  }
+
+  function abrirModalTema(t) {
+    document.getElementById('titulo-modal-tema').textContent = t ? 'Editar tema' : 'Nuevo tema del folleto';
+    document.getElementById('tema-id').value = t ? t.id : '';
+    document.getElementById('tema-titulo').value = t ? t.titulo : '';
+    document.getElementById('tema-contenido').value = t ? t.contenido : '';
+    document.getElementById('tema-orden').value = t ? t.orden : '';
+    document.getElementById('tema-imagen-url').value = t ? (t.imagen_url || '') : '';
+    document.getElementById('tema-video-url').value = t ? (t.video_url || '') : '';
+    document.getElementById('tema-imagen-archivo').value = '';
+    document.getElementById('tema-video-archivo').value = '';
+    document.getElementById('msg-tema').classList.add('oculto');
+    document.getElementById('modal-tema').classList.remove('oculto');
+  }
+
+  document.getElementById('btn-nuevo-tema').addEventListener('click', () => abrirModalTema(null));
+  document.getElementById('btn-cancelar-tema').addEventListener('click', () => {
+    document.getElementById('modal-tema').classList.add('oculto');
+  });
+
+  document.getElementById('form-tema').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('msg-tema');
+    msg.classList.add('oculto');
+    const id = document.getElementById('tema-id').value;
+
+    const fd = new FormData();
+    fd.append('titulo', document.getElementById('tema-titulo').value.trim());
+    fd.append('contenido', document.getElementById('tema-contenido').value.trim());
+    fd.append('orden', document.getElementById('tema-orden').value || '');
+    fd.append('imagen_url', document.getElementById('tema-imagen-url').value.trim());
+    fd.append('video_url', document.getElementById('tema-video-url').value.trim());
+    const imgFile = document.getElementById('tema-imagen-archivo').files[0];
+    const vidFile = document.getElementById('tema-video-archivo').files[0];
+    if (imgFile) fd.append('imagen_archivo', imgFile);
+    if (vidFile) fd.append('video_archivo', vidFile);
+
+    try {
+      if (id) {
+        await Api.postForm(`/api/admin/folleto/${id}`, fd, 'PUT');
+      } else {
+        await Api.postForm('/api/admin/folleto', fd, 'POST');
+      }
+      document.getElementById('modal-tema').classList.add('oculto');
+      await cargarFolletoAdmin();
+    } catch (err) {
+      mostrarError(msg, err.message);
+    }
+  });
+
+  await Promise.all([cargarEjerciciosAdmin(), cargarFolletoAdmin()]);
+})();
+</script>
+
+</body>
+</html>

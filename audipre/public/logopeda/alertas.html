@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alertas — AudiPre</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="topbar" id="topbar"></header>
+
+<div class="contenedor" style="max-width: 720px; padding-top: 40px; padding-bottom: 64px;">
+  <h1 style="font-size: 26px;">Alertas de cumplimiento</h1>
+  <p style="color: var(--tinta-suave); margin-top:-8px;">
+    Se genera una alerta cuando una familia registra bajo cumplimiento en sus
+    últimas sesiones de rehabilitación en casa.
+  </p>
+
+  <div id="lista-alertas" style="margin-top: 24px;"></div>
+  <p id="sin-alertas" class="oculto" style="color: var(--tinta-suave); text-align:center; padding: 40px 0;">
+    No hay alertas activas por ahora.
+  </p>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+(async function () {
+  const user = await requireSession();
+  if (!user) return;
+  if (user.rol !== 'logopeda') { window.location.href = '/padre/inicio.html'; return; }
+  renderTopbar(user, 'alertas.html');
+
+  async function cargar() {
+    const { alertas } = await Api.get('/api/alertas');
+    const cont = document.getElementById('lista-alertas');
+    const vacio = document.getElementById('sin-alertas');
+    if (alertas.length === 0) {
+      cont.innerHTML = '';
+      vacio.classList.remove('oculto');
+      return;
+    }
+    vacio.classList.add('oculto');
+    cont.innerHTML = alertas.map(a => `
+      <div class="alerta">
+        <div style="flex:1;">
+          <p><strong>${a.nino_nombre}</strong></p>
+          <p>${a.mensaje}</p>
+        </div>
+        <button class="btn btn-secundario" data-id="${a.id}">Marcar atendida</button>
+      </div>
+    `).join('');
+    cont.querySelectorAll('button[data-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await Api.put(`/api/alertas/${btn.dataset.id}/atender`);
+        await cargar();
+      });
+    });
+  }
+
+  await cargar();
+})();
+</script>
+
+</body>
+</html>
